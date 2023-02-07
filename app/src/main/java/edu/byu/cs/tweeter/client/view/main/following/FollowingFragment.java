@@ -24,21 +24,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 import edu.byu.cs.tweeter.R;
-import edu.byu.cs.tweeter.client.presenter.GetFollowingPresenter;
+import edu.byu.cs.tweeter.client.presenter.FollowingPresenter;
 import edu.byu.cs.tweeter.client.view.main.MainActivity;
 import edu.byu.cs.tweeter.model.domain.User;
 
 /**
  * Implements the "Following" tab.
  */
-public class FollowingFragment extends Fragment implements GetFollowingPresenter.View {
+public class FollowingFragment extends Fragment implements FollowingPresenter.View {
     private static final String LOG_TAG = "FollowingFragment";
     private static final String USER_KEY = "UserKey";
     private static final int LOADING_DATA_VIEW = 0;
     private static final int ITEM_VIEW = 1;
     private User user;
     private FollowingRecyclerViewAdapter followingRecyclerViewAdapter;
-    private GetFollowingPresenter presenter;
+    private FollowingPresenter presenter;
 
     /**
      * Creates an instance of the fragment and places the target user in an arguments
@@ -74,7 +74,7 @@ public class FollowingFragment extends Fragment implements GetFollowingPresenter
 
         followingRecyclerView.addOnScrollListener(new FollowRecyclerViewPaginationScrollListener(layoutManager));
 
-        presenter = new GetFollowingPresenter(this);
+        presenter = new FollowingPresenter(this);
         presenter.loadMoreFollowees(user);
 
         return view;

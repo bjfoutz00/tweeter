@@ -31,7 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import edu.byu.cs.tweeter.R;
-import edu.byu.cs.tweeter.client.presenter.GetFeedPresenter;
+import edu.byu.cs.tweeter.client.presenter.FeedPresenter;
 import edu.byu.cs.tweeter.client.view.main.MainActivity;
 import edu.byu.cs.tweeter.model.domain.Status;
 import edu.byu.cs.tweeter.model.domain.User;
@@ -39,14 +39,14 @@ import edu.byu.cs.tweeter.model.domain.User;
 /**
  * Implements the "Feed" tab.
  */
-public class FeedFragment extends Fragment implements GetFeedPresenter.View {
+public class FeedFragment extends Fragment implements FeedPresenter.View {
     private static final String LOG_TAG = "FeedFragment";
     private static final String USER_KEY = "UserKey";
     private static final int LOADING_DATA_VIEW = 0;
     private static final int ITEM_VIEW = 1;
     private User user;
     private FeedRecyclerViewAdapter feedRecyclerViewAdapter;
-    private GetFeedPresenter presenter;
+    private FeedPresenter presenter;
 
     /**
      * Creates an instance of the fragment and places the target user in an arguments
@@ -83,7 +83,7 @@ public class FeedFragment extends Fragment implements GetFeedPresenter.View {
 
         feedRecyclerView.addOnScrollListener(new FeedRecyclerViewPaginationScrollListener(layoutManager));
 
-        presenter = new GetFeedPresenter(this);
+        presenter = new FeedPresenter(this);
         presenter.loadMoreStatuses(user);
 
         return view;

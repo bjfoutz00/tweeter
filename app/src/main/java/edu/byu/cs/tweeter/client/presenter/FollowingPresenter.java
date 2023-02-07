@@ -6,8 +6,7 @@ import edu.byu.cs.tweeter.client.model.service.FollowService;
 import edu.byu.cs.tweeter.client.model.service.UserService;
 import edu.byu.cs.tweeter.model.domain.User;
 
-// TODO: see if name can be refactored to FollowingPresenter
-public class GetFollowingPresenter {
+public class FollowingPresenter {
     private static final int PAGE_SIZE = 10;
 
     public interface View {
@@ -24,7 +23,7 @@ public class GetFollowingPresenter {
     private boolean hasMorePages;
     private boolean isLoading = false;
 
-    public GetFollowingPresenter(View view) {
+    public FollowingPresenter(View view) {
         this.view = view;
         followService = new FollowService();
         userService = new UserService();
@@ -75,7 +74,7 @@ public class GetFollowingPresenter {
 
     private class GetUserObserver implements UserService.Observer {
         @Override
-        public void startUserActivity(User user) {
+        public void startActivity(User user) {
             view.startUserActivity(user);
         }
 

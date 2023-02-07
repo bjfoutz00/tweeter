@@ -23,28 +23,23 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import edu.byu.cs.tweeter.R;
-import edu.byu.cs.tweeter.client.backgroundTask.GetFollowersTask;
-import edu.byu.cs.tweeter.client.backgroundTask.GetUserTask;
-import edu.byu.cs.tweeter.client.cache.Cache;
-import edu.byu.cs.tweeter.client.presenter.GetFollowersPresenter;
+import edu.byu.cs.tweeter.client.presenter.FollowersPresenter;
 import edu.byu.cs.tweeter.client.view.main.MainActivity;
 import edu.byu.cs.tweeter.model.domain.User;
 
 /**
  * Implements the "Followers" tab.
  */
-public class FollowersFragment extends Fragment implements GetFollowersPresenter.View {
+public class FollowersFragment extends Fragment implements FollowersPresenter.View {
     private static final String LOG_TAG = "FollowersFragment";
     private static final String USER_KEY = "UserKey";
     private static final int LOADING_DATA_VIEW = 0;
     private static final int ITEM_VIEW = 1;
     private User user;
     private FollowersRecyclerViewAdapter followersRecyclerViewAdapter;
-    private GetFollowersPresenter presenter;
+    private FollowersPresenter presenter;
 
 
     /**
@@ -82,7 +77,7 @@ public class FollowersFragment extends Fragment implements GetFollowersPresenter
 
         followersRecyclerView.addOnScrollListener(new FollowRecyclerViewPaginationScrollListener(layoutManager));
 
-        presenter = new GetFollowersPresenter(this);
+        presenter = new FollowersPresenter(this);
         presenter.loadMoreFollowers(user);
 
         return view;

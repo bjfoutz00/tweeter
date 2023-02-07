@@ -7,7 +7,7 @@ import edu.byu.cs.tweeter.client.model.service.UserService;
 import edu.byu.cs.tweeter.model.domain.Status;
 import edu.byu.cs.tweeter.model.domain.User;
 
-public class GetFeedPresenter {
+public class FeedPresenter {
     private static final int PAGE_SIZE = 10;
 
     public interface View {
@@ -24,7 +24,7 @@ public class GetFeedPresenter {
     private boolean hasMorePages;
     private boolean isLoading = false;
 
-    public GetFeedPresenter(View view) {
+    public FeedPresenter(View view) {
         this.view = view;
         userService = new UserService();
         statusService = new StatusService();
@@ -47,7 +47,7 @@ public class GetFeedPresenter {
         if (!isLoading) {   // This guard is important for avoiding a race condition in the scrolling code.
             isLoading = true;
             view.setLoadingFooter(true);
-            statusService.loadMoreStatuses(user, PAGE_SIZE, lastStatus, new GetStatusObserver());
+            statusService.loadMoreFeedStatuses(user, PAGE_SIZE, lastStatus, new GetStatusObserver());
         }
     }
 
@@ -55,9 +55,9 @@ public class GetFeedPresenter {
         userService.onUserClick(userAlias, new GetUserObserver());
     }
 
-    public class GetUserObserver implements UserService.Observer {
+    private class GetUserObserver implements UserService.Observer {
         @Override
-        public void startUserActivity(User user) {
+        public void startActivity(User user) {
             view.startUserActivity(user);
         }
 
@@ -67,7 +67,14 @@ public class GetFeedPresenter {
         }
     }
 
-    public class GetStatusObserver implements StatusService.Observer {
+    private class GetStatusObserver implements StatusService.Observer {
+        @Override
+        public void displayMessage(String message) {
+            setLoading(false);
+            view.setLoadingFooter(false);
+            view.displayMessage(message);
+        }
+
         @Override
         public void addMoreItems(List<Status> statuses, boolean hasMorePages) {
             setHasMorePages(hasMorePages);
@@ -75,13 +82,6 @@ public class GetFeedPresenter {
             view.setLoadingFooter(false);
             lastStatus = (statuses.size() > 0) ? statuses.get(statuses.size() - 1) : null;
             view.addMoreItems(statuses);
-        }
-
-        @Override
-        public void displayMessage(String message) {
-            setLoading(false);
-            view.setLoadingFooter(false);
-            view.displayMessage(message);
         }
     }
 }

@@ -6,7 +6,7 @@ import edu.byu.cs.tweeter.client.model.service.FollowService;
 import edu.byu.cs.tweeter.client.model.service.UserService;
 import edu.byu.cs.tweeter.model.domain.User;
 
-public class GetFollowersPresenter {
+public class FollowersPresenter {
     private static final int PAGE_SIZE = 10;
 
     public interface View {
@@ -23,7 +23,7 @@ public class GetFollowersPresenter {
     private boolean hasMorePages;
     private boolean isLoading = false;
 
-    public GetFollowersPresenter(View view) {
+    public FollowersPresenter(View view) {
         this.view = view;
         followService = new FollowService();
         userService = new UserService();
@@ -74,7 +74,7 @@ public class GetFollowersPresenter {
 
     private class GetUserObserver implements UserService.Observer {
         @Override
-        public void startUserActivity(User user) {
+        public void startActivity(User user) {
             view.startUserActivity(user);
         }
 
