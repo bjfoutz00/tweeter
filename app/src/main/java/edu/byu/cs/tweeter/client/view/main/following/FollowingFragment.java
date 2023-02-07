@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.os.Message;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,12 +22,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import edu.byu.cs.tweeter.R;
-import edu.byu.cs.tweeter.client.backgroundTask.GetUserTask;
-import edu.byu.cs.tweeter.client.cache.Cache;
 import edu.byu.cs.tweeter.client.presenter.GetFollowingPresenter;
 import edu.byu.cs.tweeter.client.view.main.MainActivity;
 import edu.byu.cs.tweeter.model.domain.User;
@@ -41,12 +36,8 @@ public class FollowingFragment extends Fragment implements GetFollowingPresenter
     private static final String USER_KEY = "UserKey";
     private static final int LOADING_DATA_VIEW = 0;
     private static final int ITEM_VIEW = 1;
-
-
     private User user;
-
     private FollowingRecyclerViewAdapter followingRecyclerViewAdapter;
-
     private GetFollowingPresenter presenter;
 
     /**
@@ -84,7 +75,7 @@ public class FollowingFragment extends Fragment implements GetFollowingPresenter
         followingRecyclerView.addOnScrollListener(new FollowRecyclerViewPaginationScrollListener(layoutManager));
 
         presenter = new GetFollowingPresenter(this);
-        presenter.loadMoreItems(user);
+        presenter.loadMoreFollowees(user);
 
         return view;
     }
@@ -161,7 +152,6 @@ public class FollowingFragment extends Fragment implements GetFollowingPresenter
      * The adapter for the RecyclerView that displays the Following data.
      */
     private class FollowingRecyclerViewAdapter extends RecyclerView.Adapter<FollowingHolder> {
-
         private final List<User> users = new ArrayList<>();
 
         /**
@@ -175,7 +165,6 @@ public class FollowingFragment extends Fragment implements GetFollowingPresenter
             users.addAll(newUsers);
             this.notifyItemRangeInserted(startInsertPosition, newUsers.size());
         }
-
 
         /**
          * Adds a single user to the list from which the RecyclerView retrieves the users it
@@ -216,11 +205,9 @@ public class FollowingFragment extends Fragment implements GetFollowingPresenter
 
             if (viewType == LOADING_DATA_VIEW) {
                 view = layoutInflater.inflate(R.layout.loading_row, parent, false);
-
             } else {
                 view = layoutInflater.inflate(R.layout.user_row, parent, false);
             }
-
             return new FollowingHolder(view);
         }
 
@@ -266,7 +253,7 @@ public class FollowingFragment extends Fragment implements GetFollowingPresenter
          * data.
          */
         void loadMoreItems() {
-            presenter.loadMoreItems(user);
+            presenter.loadMoreFollowees(user);
         }
 
         /**
@@ -291,7 +278,6 @@ public class FollowingFragment extends Fragment implements GetFollowingPresenter
      * available data.
      */
     private class FollowRecyclerViewPaginationScrollListener extends RecyclerView.OnScrollListener {
-
         private final LinearLayoutManager layoutManager;
 
         /**
@@ -332,5 +318,4 @@ public class FollowingFragment extends Fragment implements GetFollowingPresenter
             }
         }
     }
-
 }
