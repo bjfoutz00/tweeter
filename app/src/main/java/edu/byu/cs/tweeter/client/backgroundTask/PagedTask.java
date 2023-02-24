@@ -1,4 +1,4 @@
-package edu.byu.cs.tweeter.client.backgroundTask.handler;
+package edu.byu.cs.tweeter.client.backgroundTask;
 
 import android.os.Bundle;
 import android.os.Handler;
@@ -6,7 +6,6 @@ import android.os.Handler;
 import java.io.Serializable;
 import java.util.List;
 
-import edu.byu.cs.tweeter.client.backgroundTask.AuthenticatedTask;
 import edu.byu.cs.tweeter.model.domain.AuthToken;
 import edu.byu.cs.tweeter.model.domain.User;
 import edu.byu.cs.tweeter.util.Pair;
@@ -59,7 +58,7 @@ public abstract class PagedTask<T> extends AuthenticatedTask {
 
     @Override
     protected void addBundleData(Bundle msgBundle) {
-        msgBundle.putSerializable(ITEMS_KEY, (Serializable) getItems());
+        msgBundle.putSerializable(ITEMS_KEY, (Serializable) items);
         msgBundle.putBoolean(MORE_PAGES_KEY, hasMorePages);
     }
 

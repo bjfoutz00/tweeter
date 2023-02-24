@@ -1,7 +1,8 @@
-package edu.byu.cs.tweeter.client.presenter;
+package edu.byu.cs.tweeter.client.presenter.views;
 
 import java.util.List;
 
+import edu.byu.cs.tweeter.client.presenter.Presenter;
 import edu.byu.cs.tweeter.model.domain.User;
 
 public interface PagedView<T> extends Presenter.View {

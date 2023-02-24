@@ -20,6 +20,7 @@ import com.squareup.picasso.Picasso;
 
 import edu.byu.cs.tweeter.R;
 import edu.byu.cs.tweeter.client.presenter.MainPresenter;
+import edu.byu.cs.tweeter.client.presenter.views.MainView;
 import edu.byu.cs.tweeter.client.view.login.LoginActivity;
 import edu.byu.cs.tweeter.client.view.login.StatusDialogFragment;
 import edu.byu.cs.tweeter.model.domain.User;
@@ -27,11 +28,10 @@ import edu.byu.cs.tweeter.model.domain.User;
 /**
  * The main activity for the application. Contains tabs for feed, story, following, and followers.
  */
-public class MainActivity extends AppCompatActivity implements StatusDialogFragment.Observer, MainPresenter.View {
+public class MainActivity extends AppCompatActivity implements StatusDialogFragment.Observer, MainView {
     public static final String CURRENT_USER_KEY = "CurrentUser";
     private Toast logOutToast;
     private Toast postingToast;
-    private User selectedUser;
     private TextView followeeCount;
     private TextView followerCount;
     private Button followButton;
@@ -42,12 +42,10 @@ public class MainActivity extends AppCompatActivity implements StatusDialogFragm
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        selectedUser = (User) getIntent().getSerializableExtra(CURRENT_USER_KEY);
-        if (selectedUser == null) {
-            throw new RuntimeException("User not passed to activity");
-        }
+        presenter = new MainPresenter(this);
+        presenter.setSelectedUser((User) getIntent().getSerializableExtra(CURRENT_USER_KEY));
 
-        SectionsPagerAdapter sectionsPagerAdapter = new SectionsPagerAdapter(this, getSupportFragmentManager(), selectedUser);
+        SectionsPagerAdapter sectionsPagerAdapter = new SectionsPagerAdapter(this, getSupportFragmentManager(), presenter.getSelectedUser());
         ViewPager viewPager = findViewById(R.id.view_pager);
         viewPager.setOffscreenPageLimit(1);
         viewPager.setAdapter(sectionsPagerAdapter);
@@ -64,17 +62,16 @@ public class MainActivity extends AppCompatActivity implements StatusDialogFragm
             }
         });
 
-        presenter = new MainPresenter(this);
-        presenter.updateSelectedUserFollowingAndFollowers(selectedUser);
+        presenter.updateSelectedUserFollowingAndFollowers();
 
         TextView userName = findViewById(R.id.userName);
-        userName.setText(selectedUser.getName());
+        userName.setText(presenter.getSelectedUser().getName());
 
         TextView userAlias = findViewById(R.id.userAlias);
-        userAlias.setText(selectedUser.getAlias());
+        userAlias.setText(presenter.getSelectedUser().getAlias());
 
         ImageView userImageView = findViewById(R.id.userImage);
-        Picasso.get().load(selectedUser.getImageUrl()).into(userImageView);
+        Picasso.get().load(presenter.getSelectedUser().getImageUrl()).into(userImageView);
 
         followeeCount = findViewById(R.id.followeeCount);
         followeeCount.setText(getString(R.string.followeeCount, "..."));
@@ -83,12 +80,12 @@ public class MainActivity extends AppCompatActivity implements StatusDialogFragm
         followerCount.setText(getString(R.string.followerCount, "..."));
 
         followButton = findViewById(R.id.followButton);
-        presenter.determineIsFollower(selectedUser);
+        presenter.determineIsFollower();
 
         followButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                presenter.onFollowButtonClick(selectedUser, followButton.getText().toString(), v.getContext().getString(R.string.following));
+                presenter.onFollowButtonClick(followButton.getText().toString(), v.getContext().getString(R.string.following));
             }
         });
     }
@@ -172,8 +169,6 @@ public class MainActivity extends AppCompatActivity implements StatusDialogFragm
 
     @Override
     public void onStatusPosted(String post) {
-        postingToast = Toast.makeText(this, "Posting Status...", Toast.LENGTH_LONG);
-        postingToast.show();
-        presenter.onStatusPosted(post);
+        presenter.postStatus(post);
     }
 }

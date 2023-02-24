@@ -2,6 +2,8 @@ package edu.byu.cs.tweeter.client.view.login;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -16,16 +18,20 @@ import android.widget.Toast;
 
 import androidx.fragment.app.Fragment;
 
+import java.io.ByteArrayOutputStream;
+import java.util.Base64;
+
 import edu.byu.cs.tweeter.R;
 import edu.byu.cs.tweeter.client.cache.Cache;
 import edu.byu.cs.tweeter.client.presenter.RegisterPresenter;
+import edu.byu.cs.tweeter.client.presenter.views.AuthenticateView;
 import edu.byu.cs.tweeter.client.view.main.MainActivity;
 import edu.byu.cs.tweeter.model.domain.User;
 
 /**
  * Implements the register screen.
  */
-public class RegisterFragment extends Fragment implements RegisterPresenter.View {
+public class RegisterFragment extends Fragment implements AuthenticateView {
     private static final String LOG_TAG = "RegisterFragment";
     private static final int RESULT_IMAGE = 10;
     private EditText firstName;
@@ -77,41 +83,31 @@ public class RegisterFragment extends Fragment implements RegisterPresenter.View
         registerButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                // Register and move to MainActivity.
-                presenter.onRegisterClick(firstName.getText().toString(), lastName.getText().toString(),
-                        alias.getText().toString(), password.getText().toString(), imageToUpload);
+                // Convert image to byte array.
+                try {
+                    presenter.validateRegistration(firstName.getText().toString(), lastName.getText().toString(), alias.getText().toString(), password.getText().toString(), imageToUpload.getDrawable());
+
+                    Bitmap image = ((BitmapDrawable) imageToUpload.getDrawable()).getBitmap();
+                    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                    image.compress(Bitmap.CompressFormat.JPEG, 100, bos);
+                    byte[] imageBytes = bos.toByteArray();
+
+                    // Intentionally, Use the java Base64 encoder so it is compatible with M4.
+                    String imageBytesBase64 = Base64.getEncoder().encodeToString(imageBytes);
+
+                    setErrorText(null);
+                    displayRegisterToast();
+
+                    presenter.register(firstName.getText().toString(), lastName.getText().toString(),
+                            alias.getText().toString(), password.getText().toString(), imageBytesBase64);
+
+                } catch (Exception e) {
+                    setErrorText(e.getMessage());
+                }
             }
         });
 
         return view;
-    }
-
-    // Get image if uploaded from gallery.
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-
-        if (requestCode == RESULT_IMAGE && resultCode == Activity.RESULT_OK && data != null) {
-            Uri selectedImage = data.getData();
-            imageToUpload.setImageURI(selectedImage);
-            imageUploaderButton.setText(R.string.afterUploadPicture);
-        }
-    }
-
-    @Override
-    public void setErrorText(String text) {
-        errorView.setText(text);
-    }
-
-    @Override
-    public void displayRegisterToast() {
-        registeringToast = Toast.makeText(getContext(), "Registering...", Toast.LENGTH_LONG);
-        registeringToast.show();
-    }
-
-    @Override
-    public void displayMessage(String message) {
-        Toast.makeText(getContext(), message, Toast.LENGTH_LONG).show();
     }
 
     @Override
@@ -127,5 +123,31 @@ public class RegisterFragment extends Fragment implements RegisterPresenter.View
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
+    }
+
+    @Override
+    public void displayMessage(String message) {
+        Toast.makeText(getContext(), message, Toast.LENGTH_LONG).show();
+    }
+
+    // Get image if uploaded from gallery.
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == RESULT_IMAGE && resultCode == Activity.RESULT_OK && data != null) {
+            Uri selectedImage = data.getData();
+            imageToUpload.setImageURI(selectedImage);
+            imageUploaderButton.setText(R.string.afterUploadPicture);
+        }
+    }
+
+    public void setErrorText(String text) {
+        errorView.setText(text);
+    }
+
+    public void displayRegisterToast() {
+        registeringToast = Toast.makeText(getContext(), "Registering...", Toast.LENGTH_LONG);
+        registeringToast.show();
     }
 }

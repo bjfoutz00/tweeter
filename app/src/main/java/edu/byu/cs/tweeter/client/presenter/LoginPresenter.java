@@ -1,59 +1,29 @@
 package edu.byu.cs.tweeter.client.presenter;
 
+import edu.byu.cs.tweeter.client.backgroundTask.observer.AuthenticateUserTaskObserver;
 import edu.byu.cs.tweeter.client.model.service.UserService;
-import edu.byu.cs.tweeter.model.domain.User;
+import edu.byu.cs.tweeter.client.presenter.views.AuthenticateView;
 
-public class LoginPresenter {
-    public interface View {
-        void setErrorText(String text);
-        void displayMessage(String message);
-        void displayLoginMessage();
-        void startMainActivity(User loggedInUser);
-    }
+public class LoginPresenter extends AuthenticatePresenter {
 
-    private View view;
     private UserService userService;
 
-    public LoginPresenter(View view) {
-        this.view = view;
+    public LoginPresenter(AuthenticateView view) {
+        super(view);
         userService = new UserService();
     }
 
-    public void onLoginClick(String alias, String password) {
-        try {
-            validateLogin(alias, password);
+    @Override
+    protected String getErrorPrefix() {
+        return "Failed to login";
+    }
 
-            view.setErrorText(null);
-            view.displayLoginMessage();
-
-            userService.onLoginClick(alias, password, new LoginObserver());
-
-        } catch (Exception e) {
-            view.setErrorText(e.getMessage());
-        }
+    public void login(String alias, String password) {
+        userService.login(alias, password, new AuthenticateUserTaskObserver(((AuthenticateView) view), getErrorPrefix()));
     }
 
     public void validateLogin(String alias, String password) {
-        if (alias.length() > 0 && alias.charAt(0) != '@') {
-            throw new IllegalArgumentException("Alias must begin with @.");
-        }
-        if (alias.length() < 2) {
-            throw new IllegalArgumentException("Alias must contain 1 or more characters after the @.");
-        }
-        if (password.length() == 0) {
-            throw new IllegalArgumentException("Password cannot be empty.");
-        }
-    }
-
-    private class LoginObserver implements UserService.Observer {
-        @Override
-        public void startActivity(User user) {
-            view.startMainActivity(user);
-        }
-
-        @Override
-        public void displayMessage(String message) {
-            view.displayMessage(message);
-        }
+        validateAlias(alias);
+        validatePassword(password);
     }
 }

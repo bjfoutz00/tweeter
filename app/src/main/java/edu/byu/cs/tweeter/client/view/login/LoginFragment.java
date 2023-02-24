@@ -14,6 +14,7 @@ import androidx.fragment.app.Fragment;
 
 import edu.byu.cs.tweeter.R;
 import edu.byu.cs.tweeter.client.cache.Cache;
+import edu.byu.cs.tweeter.client.presenter.views.AuthenticateView;
 import edu.byu.cs.tweeter.client.presenter.LoginPresenter;
 import edu.byu.cs.tweeter.client.view.main.MainActivity;
 import edu.byu.cs.tweeter.model.domain.User;
@@ -21,7 +22,7 @@ import edu.byu.cs.tweeter.model.domain.User;
 /**
  * Implements the login screen.
  */
-public class LoginFragment extends Fragment implements LoginPresenter.View {
+public class LoginFragment extends Fragment implements AuthenticateView {
     private static final String LOG_TAG = "LoginFragment";
     private Toast loginToast;
     private EditText alias;
@@ -54,29 +55,21 @@ public class LoginFragment extends Fragment implements LoginPresenter.View {
         loginButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                // Login and move to MainActivity.
-                presenter.onLoginClick(alias.getText().toString(), password.getText().toString());
+                try {
+                    presenter.validateLogin(alias.getText().toString(), password.getText().toString());
+
+                    setErrorText(null);
+                    displayLoginMessage();
+
+                    presenter.login(alias.getText().toString(), password.getText().toString());
+
+                } catch (Exception e) {
+                    setErrorText(e.getMessage());
+                }
             }
         });
 
         return view;
-    }
-
-    @Override
-    public void setErrorText(String text) {
-        errorView.setText(text);
-    }
-
-    @Override
-    public void displayMessage(String message) {
-        Toast.makeText(getContext(), message, Toast.LENGTH_LONG).show();
-    }
-
-    @Override
-    public void displayLoginMessage() {
-        loginToast = Toast.makeText(getContext(), "Logging In...", Toast.LENGTH_LONG);
-        loginToast.show();
-
     }
 
     @Override
@@ -88,5 +81,20 @@ public class LoginFragment extends Fragment implements LoginPresenter.View {
 
         Toast.makeText(getContext(), "Hello " + Cache.getInstance().getCurrUser().getName(), Toast.LENGTH_LONG).show();
         startActivity(intent);
+    }
+
+    @Override
+    public void displayMessage(String message) {
+        Toast.makeText(getContext(), message, Toast.LENGTH_LONG).show();
+    }
+
+    public void setErrorText(String text) {
+        errorView.setText(text);
+    }
+
+    public void displayLoginMessage() {
+        loginToast = Toast.makeText(getContext(), "Logging In...", Toast.LENGTH_LONG);
+        loginToast.show();
+
     }
 }

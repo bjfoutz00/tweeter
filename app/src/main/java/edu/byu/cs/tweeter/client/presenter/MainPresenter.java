@@ -1,7 +1,5 @@
 package edu.byu.cs.tweeter.client.presenter;
 
-import android.util.Log;
-
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
@@ -9,76 +7,93 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import edu.byu.cs.tweeter.client.backgroundTask.observer.CountTaskObserver;
+import edu.byu.cs.tweeter.client.backgroundTask.observer.DisplayMessageObserver;
+import edu.byu.cs.tweeter.client.backgroundTask.observer.IsFollowerTaskObserver;
+import edu.byu.cs.tweeter.client.backgroundTask.observer.MainStatusObserver;
+import edu.byu.cs.tweeter.client.backgroundTask.observer.SimpleTaskObserver;
 import edu.byu.cs.tweeter.client.cache.Cache;
 import edu.byu.cs.tweeter.client.model.service.FollowService;
 import edu.byu.cs.tweeter.client.model.service.StatusService;
 import edu.byu.cs.tweeter.client.model.service.UserService;
+import edu.byu.cs.tweeter.client.presenter.views.MainView;
 import edu.byu.cs.tweeter.model.domain.Status;
 import edu.byu.cs.tweeter.model.domain.User;
 
 public class MainPresenter {
     private static final String LOG_TAG = "MainActivity";
 
-    public interface View {
-        void displayMessage(String message);
-        void setFollowerCount(int count);
-        void setFolloweeCount(int count);
-        void setFollowButtonVisibility(boolean value);
-        void setFollowButton(boolean isFollower);
-        void enableFollowButton(boolean enable);
-        void logoutUser();
-        void onSuccessfulPost();
-    }
-
-    private View view;
+    private MainView view;
     private FollowService followService;
     private UserService userService;
     private StatusService statusService;
+    private User selectedUser;
 
-    public MainPresenter(View view) {
+    public MainPresenter(MainView view) {
         this.view = view;
         followService = new FollowService();
         userService = new UserService();
         statusService = new StatusService();
     }
 
-    public void updateSelectedUserFollowingAndFollowers(User selectedUser) {
-        followService.updateSelectedUserFollowingAndFollowers(selectedUser, new MainFollowObserver());
+    public User getSelectedUser() {
+        return selectedUser;
     }
 
-    public void determineIsFollower(User selectedUser) {
+    public void setSelectedUser(User selectedUser) {
+        this.selectedUser = selectedUser;
+
+        if (selectedUser == null) {
+            throw new RuntimeException("User not passed to activity");
+        }
+    }
+
+    public void updateSelectedUserFollowingAndFollowers() {
+        followService.updateSelectedUserFollowingAndFollowers(selectedUser, new GetFollowersCountObserver(view), new GetFollowingCountObserver(view));
+    }
+
+    public void determineIsFollower() {
         if (selectedUser.compareTo(Cache.getInstance().getCurrUser()) == 0) {
             view.setFollowButtonVisibility(false);
         } else {
             view.setFollowButtonVisibility(true);
-            followService.determineIsFollower(selectedUser, new MainFollowObserver());
+            followService.determineIsFollower(selectedUser, new IsFollowerObserver(view));
         }
     }
 
-    public void onFollowButtonClick(User selectedUser, String followButtonText, String following) {
+    public void onFollowButtonClick(String followButtonText, String following) {
         view.enableFollowButton(false);
         if (followButtonText.equals(following)) {
-            followService.unfollowUser(selectedUser, new MainFollowObserver());
+            followService.unfollowUser(selectedUser, new UnfollowObserver(view));
             view.displayMessage("Removing " + selectedUser.getName() + "...");
         } else {
-            followService.followUser(selectedUser, new MainFollowObserver());
+            followService.followUser(selectedUser, new FollowObserver(view));
             view.displayMessage("Adding " + selectedUser.getName() + "...");
         }
     }
 
     public void logout() {
-        userService.logout(new MainUserObserver());
+        userService.logout(new LogoutObserver(view));
     }
 
-    public void onStatusPosted(String post) {
+    public void postStatus(String post) {
         try {
+            view.displayMessage("Posting Status...");
             Status newStatus = new Status(post, Cache.getInstance().getCurrUser(), getFormattedDateTime(), parseURLs(post), parseMentions(post));
-            statusService.onStatusPosted(newStatus, new MainStatusObserver());
+            getStatusService().postStatus(newStatus, getStatusObserver());
 
         } catch (Exception ex) {
-            Log.e(LOG_TAG, ex.getMessage(), ex);
-            view.displayMessage("Failed to post the status because of exception: " + ex.getMessage());
+//            Log.e(LOG_TAG, ex.getMessage(), ex);
+            view.displayMessage("Failed to post status because of exception: " + ex.getMessage());
         }
+    }
+
+    public MainStatusObserver getStatusObserver() {
+        return new MainStatusObserver(view);
+    }
+
+    public StatusService getStatusService() {
+        return statusService;
     }
 
     public String getFormattedDateTime() throws ParseException {
@@ -139,59 +154,77 @@ public class MainPresenter {
         }
     }
 
-    private class MainFollowObserver implements FollowService.MainObserver {
-        @Override
-        public void displayMessage(String message) {
-            view.displayMessage(message);
+    public void setIsFollower(boolean isFollower) {
+        view.setFollowButton(isFollower);
+    }
+
+    private class FollowObserver extends DisplayMessageObserver implements SimpleTaskObserver {
+        public FollowObserver(Presenter.View view) {
+            super(view, "Failed to follow user");
         }
 
         @Override
-        public void addMoreItems(List<User> items, boolean hasMorePages) {
+        public void handleSuccess() {
+            updateSelectedUserFollowingAndFollowers();
+            setIsFollower(true);
+            view.enableFollowButton(true);
+        }
+    }
 
+    private class UnfollowObserver extends DisplayMessageObserver implements SimpleTaskObserver {
+        public UnfollowObserver(Presenter.View view) {
+            super(view, "Failed to unfollow user");
         }
 
         @Override
-        public void setFollowerCount(int count) {
-            view.setFollowerCount(count);
+        public void handleSuccess() {
+            updateSelectedUserFollowingAndFollowers();
+            setIsFollower(false);
+            view.enableFollowButton(true);
+        }
+    }
+
+    private class IsFollowerObserver extends DisplayMessageObserver implements IsFollowerTaskObserver {
+        public IsFollowerObserver(Presenter.View view) {
+            super(view, "Failed to verify if following user");
         }
 
         @Override
-        public void setFolloweeCount(int count) {
+        public void handleSuccess(boolean isFollower) {
+            setIsFollower(true);
+        }
+    }
+
+    private class GetFollowingCountObserver extends DisplayMessageObserver implements CountTaskObserver {
+        public GetFollowingCountObserver(Presenter.View view) {
+            super(view, "Failed to get following count");
+        }
+
+        @Override
+        public void handleSuccess(int count) {
             view.setFolloweeCount(count);
         }
+    }
 
-        @Override
-        public void setIsFollower(boolean isFollower) {
-            view.setFollowButton(isFollower);
+    private class GetFollowersCountObserver extends DisplayMessageObserver implements CountTaskObserver {
+        public GetFollowersCountObserver(Presenter.View view) {
+            super(view, "Failed to get followers count");
         }
 
         @Override
-        public void enableFollowButton(boolean enable) {
-            view.enableFollowButton(enable);
+        public void handleSuccess(int count) {
+            view.setFollowerCount(count);
         }
     }
 
-    private class MainUserObserver implements UserService.MainObserver {
+    private class LogoutObserver extends DisplayMessageObserver implements SimpleTaskObserver {
+        public LogoutObserver(Presenter.View view) {
+            super(view, "Failed to logout user");
+        }
+
         @Override
-        public void logoutUser() {
+        public void handleSuccess() {
             view.logoutUser();
-        }
-
-        @Override
-        public void displayMessage(String message) {
-            view.displayMessage(message);
-        }
-    }
-
-    private class MainStatusObserver implements StatusService.MainObserver  {
-        @Override
-        public void displayMessage(String message) {
-            view.displayMessage(message);
-        }
-
-        @Override
-        public void onSuccessfulPost() {
-            view.onSuccessfulPost();
         }
     }
 }
